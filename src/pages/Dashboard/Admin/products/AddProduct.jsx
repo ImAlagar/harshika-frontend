@@ -133,7 +133,7 @@ const AddProduct = () => {
   // Professional variant structure: color -> sizes + images
   const [variants, setVariants] = useState({});
 
-  const commonSizes = ['M', 'L', 'XL', 'XXL', 'XXXL'];
+  const commonSizes = ['XS','S','M', 'L', 'XL', 'XXL', 'XXXL'];
   const commonColors = ['Red', 'Blue', 'Green', 'Black', 'White', 'Gray', 'Navy', 'Maroon', 'Olive'];
 
   // Theme-based styling

@@ -1,6 +1,6 @@
 // components/admin/products/ProductFilters.jsx - FIXED
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FiSearch, FiX, FiFilter } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilters, clearFilters } from '../../../redux/slices/productSlice';
@@ -8,7 +8,7 @@ import { useTheme } from '../../../context/ThemeContext';
 
 // Import category and subcategory services
 import { useGetAllCategoriesQuery } from '../../../redux/services/categoryService';
-import { useGetSubcategoriesByCategoryQuery } from '../../../redux/services/subcategoryService';
+import { useGetAllSubcategoriesQuery } from '../../../redux/services/subcategoryService';
 
 const ProductFilters = ({ theme: propTheme }) => {
   const dispatch = useDispatch();
@@ -22,17 +22,22 @@ const ProductFilters = ({ theme: propTheme }) => {
     data: subcategoriesResponse, 
     isLoading: subcategoriesLoading,
     isError: subcategoriesError 
-  } = useGetSubcategoriesByCategoryQuery(filters.category, { 
-    skip: !filters.category 
-  });
+  } = useGetAllSubcategoriesQuery();
 
   // FIX: Properly access categories and subcategories data based on the actual API response structure
   const categories = categoriesResponse?.data?.categories || [];
-  const subcategories = subcategoriesResponse?.data || [];
-
+  const subcategories = subcategoriesResponse?.data?.subcategories || [];
 
   // Local state for mobile filter panel
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  
+  // Track if component is mounted
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   // Theme-based styles
   const themeStyles = {
@@ -65,7 +70,6 @@ const ProductFilters = ({ theme: propTheme }) => {
   };
 
   const handleFilterChange = (key, value) => {
-    
     const newFilters = { ...filters };
     
     // Reset subcategory when category changes
@@ -157,10 +161,7 @@ const ProductFilters = ({ theme: propTheme }) => {
           <select
             value={filters.subcategory || ''}
             onChange={(e) => handleFilterChange('subcategory', e.target.value)}
-            disabled={!filters.category || subcategoriesLoading}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${themeStyles.input} ${
-              !filters.category ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${themeStyles.input}`}
           >
             <option value="">All Subcategories</option>
             {subcategoriesLoading ? (
@@ -297,16 +298,16 @@ const ProductFilters = ({ theme: propTheme }) => {
     </div>
   );
 
-  // Mobile Filters Panel
+  // Mobile Filters Panel - SIMPLIFIED VERSION
   const MobileFiltersPanel = () => (
     <motion.div
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
-      className={`lg:hidden mobile-filters-panel p-4 rounded-lg border shadow-sm mb-4 ${themeStyles.container}`}
+      transition={{ duration: 0.2 }}
+      className={`lg:hidden p-4 rounded-lg border shadow-sm mb-4 ${themeStyles.container}`}
     >
       <div className="space-y-4">
-
         {/* Category Filter */}
         <div>
           <label className={`block text-sm font-medium mb-1 ${themeStyles.text.label}`}>
@@ -340,17 +341,12 @@ const ProductFilters = ({ theme: propTheme }) => {
           <select
             value={filters.subcategory || ''}
             onChange={(e) => handleFilterChange('subcategory', e.target.value)}
-            disabled={!filters.category || subcategoriesLoading}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${themeStyles.input} ${
-              !filters.category ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${themeStyles.input}`}
           >
             <option value="">All Subcategories</option>
             {subcategoriesLoading ? (
-              <option value="" disabled>Loading...</option>
-            ) : Array.isArray(subcategories) && subcategories.length === 0 && filters.category ? (
-              <option value="" disabled>No subcategories found</option>
-            ) : Array.isArray(subcategories) ? (
+              <option value="" disabled>Loading subcategories...</option>
+            ) : Array.isArray(subcategories) && subcategories.length > 0 ? (
               subcategories.map((subcategory) => (
                 <option key={subcategory.id} value={subcategory.id}>
                   {subcategory.name}
@@ -375,6 +371,23 @@ const ProductFilters = ({ theme: propTheme }) => {
             <option value="">All Status</option>
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+
+        {/* Stock Status Filter */}
+        <div>
+          <label className={`block text-sm font-medium mb-1 ${themeStyles.text.label}`}>
+            Stock Status
+          </label>
+          <select
+            value={filters.stockStatus || ''}
+            onChange={(e) => handleFilterChange('stockStatus', e.target.value)}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${themeStyles.input}`}
+          >
+            <option value="">All Stock</option>
+            <option value="in_stock">In Stock</option>
+            <option value="low_stock">Low Stock</option>
+            <option value="out_of_stock">Out of Stock</option>
           </select>
         </div>
 
@@ -405,6 +418,11 @@ const ProductFilters = ({ theme: propTheme }) => {
     </motion.div>
   );
 
+  // Don't render anything if not mounted (SSR fix)
+  if (!isMounted) {
+    return null;
+  }
+
   return (
     <>
       {/* Desktop - Always visible */}
@@ -415,7 +433,10 @@ const ProductFilters = ({ theme: propTheme }) => {
       {/* Mobile - Button and Collapsible Panel */}
       <div className="lg:hidden">
         <MobileFiltersButton />
-        {showMobileFilters && <MobileFiltersPanel />}
+        
+        <AnimatePresence>
+          {showMobileFilters && <MobileFiltersPanel key="mobile-filters" />}
+        </AnimatePresence>
       </div>
     </>
   );
