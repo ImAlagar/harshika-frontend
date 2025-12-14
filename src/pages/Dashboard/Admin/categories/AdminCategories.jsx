@@ -199,7 +199,6 @@ const AdminCategories = () => {
         <div className="min-w-0">
           <p className={`font-medium truncate ${themeStyles.text.primary}`}>{value}</p>
           <p className={`text-sm truncate ${themeStyles.text.muted}`}>
-            {record.description || 'No description'}
           </p>
         </div>
       ),

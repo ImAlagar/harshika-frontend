@@ -35,7 +35,7 @@ const SelectField = ({
     <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
       {label && (
         <label className={`block text-sm font-medium font-instrument ${currentTheme.text.secondary} mb-2`}>
-          {label} {required && '*'}
+          {label} {required && ''}
         </label>
       )}
       <select

@@ -118,7 +118,6 @@ const product = productData?.data;
 
 
 
-
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -861,7 +860,6 @@ const product = productData?.data;
                         onChange={handleProductChange}
                         options={safeMapOptions(subcategories, 'id', 'name')}
                         loading={subcategoriesLoading}
-                        disabled={!selectedCategoryId}
                       />
 
                       {/* Normal Price */}
@@ -889,17 +887,7 @@ const product = productData?.data;
                         placeholder="0.00"
                       />
 
-                      {/* Wholesale Price */}
-                      <InputField
-                        label="Wholesale Price"
-                        name="wholesalePrice"
-                        value={productForm.wholesalePrice}
-                        onChange={handleProductChange}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00"
-                      />
+
 
                       {/* Status */}
                       <SelectField

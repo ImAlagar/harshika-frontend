@@ -3,11 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../../../context/ThemeContext';
 import { useCreateProductMutation } from '../../../../redux/services/productService';
 import { useGetAllCategoriesQuery } from '../../../../redux/services/categoryService';
-import { useGetSubcategoriesByCategoryQuery } from '../../../../redux/services/subcategoryService';
 import { toast } from 'react-toastify';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../../../components/Common/Button';
+import { useGetAllSubcategoriesQuery } from '../../../../redux/services/subcategoryService';
+
+
 
 const AddProduct = () => {
   const [loading, setLoading] = useState(false);
@@ -19,8 +21,9 @@ const AddProduct = () => {
   const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
   const { data: categoriesData, isLoading: categoriesLoading } = useGetAllCategoriesQuery();
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
-  const { data: subcategoriesData, isLoading: subcategoriesLoading } = 
-    useGetSubcategoriesByCategoryQuery(selectedCategoryId, { skip: !selectedCategoryId });
+
+    const { data: subcategoriesData, isLoading: subcategoriesLoading } = useGetAllSubcategoriesQuery();
+
 
   const extractCategories = (data) => {
     if (!data) {
@@ -46,6 +49,7 @@ const AddProduct = () => {
     return [];
   };
 
+
   const extractSubcategories = (data) => {
     if (!data) {
       return [];
@@ -53,6 +57,10 @@ const AddProduct = () => {
     
     if (data.data && data.data.subcategories && Array.isArray(data.data.subcategories)) {
       return data.data.subcategories;
+    }
+    
+    if (data.subcategories && Array.isArray(data.subcategories)) {
+      return data.subcategories;
     }
     
     if (data.data && Array.isArray(data.data)) {
@@ -65,6 +73,7 @@ const AddProduct = () => {
     
     return [];
   };
+
 
   const categories = categoriesLoading ? [] : extractCategories(categoriesData);
   const subcategories = subcategoriesLoading ? [] : extractSubcategories(subcategoriesData);
@@ -184,14 +193,26 @@ const AddProduct = () => {
   // Handle basic product input changes
   const handleProductChange = (e) => {
     const { name, value } = e.target;
+    
+    // Store the previous categoryId to check if we need to clear subcategory
+    const previousCategoryId = product.categoryId;
+    
     setProduct(prev => ({
       ...prev,
       [name]: value
     }));
 
+    // If category is changing, warn about subcategory mismatch but don't clear it
     if (name === 'categoryId') {
       setSelectedCategoryId(value);
-      setProduct(prev => ({ ...prev, subcategoryId: '' }));
+      
+      // Warn if subcategory belongs to different category
+      if (product.subcategoryId && value) {
+        const selectedSubcategory = subcategories.find(sub => sub.id === product.subcategoryId);
+        if (selectedSubcategory && selectedSubcategory.categoryId !== value) {
+          toast.warning(`Selected subcategory "${selectedSubcategory.name}" belongs to a different category. You may want to update it.`);
+        }
+      }
     }
 
     // Update SKUs when product code changes
@@ -487,9 +508,30 @@ const AddProduct = () => {
       if (response.success) {
         resetForm();
       }
-    } catch (error) {
-      // Error toast is handled by the mutation
-    } finally {
+} catch (error) {
+  // DEBUG: Log the complete error structure
+  console.log('Full error:', error);
+  console.log('Error data keys:', Object.keys(error.data || {}));
+  console.log('Error data values:', error.data);
+  
+  // Try to find the actual error message
+  let errorMessage = 'Failed to create product';
+  
+  // Check different possible locations for the error message
+  if (error?.data?.message) {
+    errorMessage = error.data.message;
+  } else if (error?.data?.error) {
+    errorMessage = error.data.error;
+  } else if (error?.data?.errorMessage) {
+    errorMessage = error.data.errorMessage;
+  } else if (error?.data?.errors?.[0]) {
+    // Your current structure shows errors: [null]
+    // Maybe there's another field
+    errorMessage = error.data.errors[0] || 'Validation error';
+  }
+  
+  toast.error(errorMessage);
+} finally {
       setLoading(false);
     }
   };
@@ -652,7 +694,7 @@ const AddProduct = () => {
                           name="categoryId"
                           value={product.categoryId}
                           onChange={handleProductChange}
-                          className={`w-full px-4 py-3 border ${currentTheme.border} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${currentTheme.bg.input} ${currentTheme.text.primary}`}
+                          className={`w-full px-4 py-3 cursor-pointer border ${currentTheme.border} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${currentTheme.bg.input} ${currentTheme.text.primary}`}
                         >
                           <option value="">Select Category (Optional)</option>
                           {categoriesLoading ? (
@@ -671,34 +713,45 @@ const AddProduct = () => {
                       </motion.div>
 
                       {/* Subcategory */}
-                      <motion.div variants={itemVariants}>
-                        <label className={`block text-sm font-medium font-instrument ${currentTheme.text.secondary} mb-2`}>
-                          Subcategory
-                        </label>
-                        <select
-                          name="subcategoryId"
-                          value={product.subcategoryId}
-                          onChange={handleProductChange}
-                          disabled={!selectedCategoryId}
-                          className={`w-full px-4 py-3 border ${currentTheme.border} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${currentTheme.bg.input} ${currentTheme.text.primary} ${!selectedCategoryId ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          <option value="">Select Subcategory (Optional)</option>
-                          {subcategoriesLoading ? (
-                            <option value="" disabled>Loading subcategories...</option>
-                          ) : (
-                            subcategories.map(subcategory => (
+                    <motion.div variants={itemVariants}>
+                      <label className={`block text-sm font-medium font-instrument ${currentTheme.text.secondary} mb-2`}>
+                        Subcategory
+                      </label>
+                      <select
+                        name="subcategoryId"
+                        value={product.subcategoryId}
+                        onChange={handleProductChange}
+                        className={`w-full px-4 py-3 border ${currentTheme.border} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${currentTheme.bg.input} ${currentTheme.text.primary} cursor-pointer`}
+                      >
+                        <option value="">Select Subcategory (Optional)</option>
+                        {subcategoriesLoading ? (
+                          <option value="" disabled>Loading subcategories...</option>
+                        ) : (
+                          // Filter subcategories by selected category if category is selected
+                          subcategories
+                            .filter(subcategory => {
+                              // If category is selected, show only subcategories from that category
+                              if (product.categoryId) {
+                                return subcategory.categoryId === product.categoryId;
+                              }
+                              // If no category selected, show ALL subcategories
+                              return true;
+                            })
+                            .map(subcategory => (
                               <option key={subcategory.id} value={subcategory.id}>
                                 {subcategory.name}
+                                {/* Optional: Show parent category name */}
+                                {product.categoryId ? '' : ` (${categories.find(cat => cat.id === subcategory.categoryId)?.name || 'Unknown'})`}
                               </option>
                             ))
-                          )}
-                        </select>
-                        {!selectedCategoryId && (
-                          <p className={`text-xs ${currentTheme.text.muted} mt-1`}>
-                            Select a category first
-                          </p>
                         )}
-                      </motion.div>
+                      </select>
+                      {product.categoryId && (
+                        <p className={`text-xs ${currentTheme.text.muted} mt-1`}>
+                          Showing subcategories for selected category
+                        </p>
+                      )}
+                    </motion.div>
 
                       {/* Normal Price */}
                       <motion.div variants={itemVariants}>

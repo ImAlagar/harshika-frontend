@@ -442,7 +442,7 @@ const handlePageSizeChange = (newSize) => {
         
         return (
           <div>
-            <span className={`font-medium ${themeStyles.text.primary}`}>
+            <span className={`font-medium line-through ${themeStyles.text.primary}`}>
               ₹{normalPrice.toFixed(2)}
             </span>
             {hasSpecialOffer && (
@@ -521,73 +521,7 @@ const handlePageSizeChange = (newSize) => {
         const isAnyActionLoading = isProductActionLoading(record.id);
 
         return (
-          <div className="flex items-center space-x-2">
-            {/* Featured Toggle */}
-            <button
-              onClick={() => handleMerchandisingToggle('featured', record.id, record.featured)}
-              disabled={isFeaturedLoading || isAnyActionLoading}
-              className={`p-2 rounded-lg transition-colors ${
-                record.featured 
-                  ? theme === 'dark'
-                    ? 'text-purple-400 bg-purple-900 hover:bg-purple-800'
-                    : 'text-purple-600 bg-purple-50 hover:bg-purple-100'
-                  : theme === 'dark'
-                    ? 'text-gray-400 hover:bg-gray-700'
-                    : 'text-gray-400 hover:bg-gray-100'
-              } ${isFeaturedLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={record.featured ? 'Remove from Featured' : 'Add to Featured'}
-            >
-              {isFeaturedLoading ? (
-                <FiRefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <FiStar className="w-4 h-4" />
-              )}
-            </button>
-            
-            {/* Best Seller Toggle */}
-            <button
-              onClick={() => handleMerchandisingToggle('bestSeller', record.id, record.isBestSeller)}
-              disabled={isBestSellerLoading || isAnyActionLoading}
-              className={`p-2 rounded-lg transition-colors ${
-                record.isBestSeller 
-                  ? theme === 'dark'
-                    ? 'text-yellow-400 bg-yellow-900 hover:bg-yellow-800'
-                    : 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100'
-                  : theme === 'dark'
-                    ? 'text-gray-400 hover:bg-gray-700'
-                    : 'text-gray-400 hover:bg-gray-100'
-              } ${isBestSellerLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={record.isBestSeller ? 'Remove from Best Sellers' : 'Add to Best Sellers'}
-            >
-              {isBestSellerLoading ? (
-                <FiRefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <FiTrendingUp className="w-4 h-4" />
-              )}
-            </button>
-
-            {/* New Arrival Toggle */}
-            <button
-              onClick={() => handleMerchandisingToggle('newArrival', record.id, record.isNewArrival)}
-              disabled={isNewArrivalLoading || isAnyActionLoading}
-              className={`p-2 rounded-lg transition-colors ${
-                record.isNewArrival 
-                  ? theme === 'dark'
-                    ? 'text-blue-400 bg-blue-900 hover:bg-blue-800'
-                    : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
-                  : theme === 'dark'
-                    ? 'text-gray-400 hover:bg-gray-700'
-                    : 'text-gray-400 hover:bg-gray-100'
-              } ${isNewArrivalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              title={record.isNewArrival ? 'Remove from New Arrivals' : 'Add to New Arrivals'}
-            >
-              {isNewArrivalLoading ? (
-                <FiRefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <FiClock className="w-4 h-4" />
-              )}
-            </button>
-            
+          <div className="flex items-center space-x-2">            
             {/* View Button */}
             <Link
               to={`/dashboard/products/view/${value}`}
@@ -806,7 +740,7 @@ const handlePageSizeChange = (newSize) => {
             {/* Price + Stock */}
             <div className="flex flex-wrap justify-between items-center text-sm mt-2">
               <div className="flex flex-col">
-                <span className={`font-medium ${themeStyles.text.primary}`}>
+                <span className={`font-medium line-through ${themeStyles.text.primary}`}>
                   ₹{parseFloat(product.normalPrice || 0).toFixed(2)}
                 </span>
                 {product.offerPrice && product.offerPrice > 0 && product.offerPrice !== product.normalPrice && (

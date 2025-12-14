@@ -24,7 +24,6 @@ const EditCategory = () => {
   // Form state
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
   });
 
   const [image, setImage] = useState(null);
@@ -92,7 +91,6 @@ const EditCategory = () => {
     if (category) {
       setFormData({
         name: category.name || '',
-        description: category.description || '',
       });
 
       if (category.image) {
@@ -146,10 +144,7 @@ const EditCategory = () => {
       toast.error('Category name is required');
       return false;
     }
-    if (!formData.description.trim()) {
-      toast.error('Category description is required');
-      return false;
-    }
+
     return true;
   };
 
@@ -287,17 +282,7 @@ const EditCategory = () => {
                         />
                       </motion.div>
 
-                      <motion.div variants={itemVariants}>
-                        <TextArea
-                          label="Description *"
-                          name="description"
-                          value={formData.description}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="Describe this category..."
-                          rows={4}
-                        />
-                      </motion.div>
+ 
                     </div>
                   </motion.section>
 
