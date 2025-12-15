@@ -812,20 +812,6 @@ const AddProduct = () => {
                       </motion.div>
                     </motion.div>
 
-                    {/* Description */}
-                    <motion.div variants={itemVariants} className="mt-6">
-                      <label className={`block text-sm font-medium font-instrument ${currentTheme.text.secondary} mb-2`}>
-                        Description
-                      </label>
-                      <textarea
-                        name="description"
-                        value={product.description}
-                        onChange={handleProductChange}
-                        rows={4}
-                        className={`w-full px-4 py-3 border ${currentTheme.border} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${currentTheme.bg.input} ${currentTheme.text.primary}`}
-                        placeholder="Describe your product features, benefits, and specifications..."
-                      />
-                    </motion.div>
                   </motion.section>
 
                   {/* Product Details Section */}

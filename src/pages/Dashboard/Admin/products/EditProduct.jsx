@@ -160,7 +160,7 @@ const product = productData?.data;
     description: '',
     normalPrice: '',
     offerPrice: '',
-    wholesalePrice: '',
+    wholesalePrice: '0', // Set default to '0' instead of empty string
     categoryId: '',
     subcategoryId: '',
     status: 'ACTIVE',
@@ -303,25 +303,40 @@ const product = productData?.data;
     }
   }, [product]);
 
-  // Handle basic product input changes
-  const handleProductChange = (e) => {
-    const { name, value } = e.target;
+// Handle basic product input changes
+const handleProductChange = (e) => {
+  const { name, value } = e.target;
+  
+  if (name === 'categoryId') {
+    // If user selects "Uncategorized" (empty value)
+    if (!value) {
+      setSelectedCategoryId('');
+      setProductForm(prev => ({ 
+        ...prev, 
+        categoryId: '', 
+        subcategoryId: '' 
+      }));
+      toast.info('Product will be moved to Uncategorized');
+    } else {
+      setSelectedCategoryId(value);
+      setProductForm(prev => ({ 
+        ...prev, 
+        categoryId: value, 
+        subcategoryId: '' 
+      }));
+    }
+  } else {
     setProductForm(prev => ({
       ...prev,
       [name]: value
     }));
+  }
 
-    if (name === 'categoryId') {
-      setSelectedCategoryId(value);
-      setProductForm(prev => ({ ...prev, subcategoryId: '' }));
-    }
-
-    // Update SKUs when product code changes
-    if (name === 'productCode' && value) {
-      updateAllSKUs(value);
-    }
-  };
-
+  // Update SKUs when product code changes
+  if (name === 'productCode' && value) {
+    updateAllSKUs(value);
+  }
+};
   // Update all SKUs when product code changes
   const updateAllSKUs = (productCode) => {
     setVariants(prev => {
@@ -652,8 +667,24 @@ const product = productData?.data;
 
       // Add basic product data
       Object.entries(productForm).forEach(([key, value]) => {
-        if (value !== null && value !== undefined && value !== '') {
-          formData.append(key, value.toString());
+        if (value !== null && value !== undefined) {
+          // Handle category and subcategory - send empty string if cleared
+          if (key === 'categoryId' || key === 'subcategoryId') {
+            formData.append(key, value || '');
+          }
+          // Handle price fields - convert empty string to 0 or don't send if optional
+          else if (key === 'wholesalePrice') {
+            // Send only if it has a valid value, otherwise skip or send 0
+            if (value !== '' && !isNaN(parseFloat(value)) && parseFloat(value) >= 0) {
+              formData.append(key, parseFloat(value).toString());
+            } else if (value === '') {
+              // Send empty string or skip based on backend expectation
+              // formData.append(key, '0'); // Uncomment if backend expects a value
+              // Or skip sending if backend handles optional
+            }
+          } else {
+            formData.append(key, value.toString());
+          }
         }
       });
 
@@ -677,6 +708,7 @@ const product = productData?.data;
     }
   };
 
+
   // Form validation (basic only)
   const validateForm = () => {
     if (!productForm.name.trim()) {
@@ -691,9 +723,14 @@ const product = productData?.data;
       toast.error('Valid normal price is required');
       return false;
     }
-    if (!productForm.categoryId) {
-      toast.error('Category is required');
-      return false;
+
+    // Validate wholesale price if provided
+    if (productForm.wholesalePrice !== undefined && productForm.wholesalePrice !== '') {
+      const wholesalePrice = parseFloat(productForm.wholesalePrice);
+      if (isNaN(wholesalePrice) || wholesalePrice < 0) {
+        toast.error('Wholesale price must be a valid number greater than or equal to 0');
+        return false;
+      }
     }
 
     // Validate product details
@@ -706,6 +743,7 @@ const product = productData?.data;
 
     return true;
   };
+
 
   // Calculate statistics
   const getProductStats = () => {
@@ -847,7 +885,6 @@ const product = productData?.data;
                         name="categoryId"
                         value={productForm.categoryId}
                         onChange={handleProductChange}
-                        required
                         options={safeMapOptions(categories, 'id', 'name')}
                         loading={categoriesLoading}
                       />
@@ -903,17 +940,7 @@ const product = productData?.data;
                       />
                     </motion.div>
 
-                    {/* Description */}
-                    <motion.div variants={itemVariants} className="mt-6">
-                      <TextArea
-                        label="Description"
-                        name="description"
-                        value={productForm.description}
-                        onChange={handleProductChange}
-                        placeholder="Describe your product features, benefits, and specifications..."
-                        rows={4}
-                      />
-                    </motion.div>
+
 
                     <motion.div
                       variants={itemVariants}
