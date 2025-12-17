@@ -8,9 +8,7 @@ import { ArrowLeft, Upload, X, Image, Layout, Calendar, Eye, EyeOff } from 'luci
 import { useNavigate } from 'react-router-dom';
 import Button from '../../../../components/Common/Button';
 import InputField from '../../../../components/Common/InputField';
-import TextArea from '../../../../components/Common/TextArea';
-import SelectField from '../../../../components/Common/SelectField';
-import { useSelector } from 'react-redux';
+ import { useSelector } from 'react-redux';
 import DatePicker from 'react-datepicker';
 
 const AddSlider = () => {
@@ -39,12 +37,8 @@ const AddSlider = () => {
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
-    description: '',
-    smallText: '',
-    offerText: '',
     buttonText: '',
     buttonLink: '',
-    layout: 'left',
     order: 0,
     isActive: true,
     startDate: '',
@@ -246,8 +240,8 @@ const AddSlider = () => {
       
       // Reset form
       setFormData({
-        title: '', subtitle: '', description: '', smallText: '', offerText: '',
-        buttonText: '', buttonLink: '', layout: 'left', order: 0, isActive: true,
+        title: '', subtitle: '', 
+        buttonText: '', buttonLink: '',  order: 0, isActive: true,
         startDate: '', endDate: ''
       });
       
@@ -356,53 +350,11 @@ const AddSlider = () => {
                         />
                       </motion.div>
 
-                      <motion.div variants={itemVariants}>
-                        <TextArea
-                          label="Description"
-                          name="description"
-                          value={formData.description}
-                          onChange={handleInputChange}
-                          placeholder="Detailed description of the slider..."
-                          rows={3}
-                        />
-                      </motion.div>
+
+
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <motion.div variants={itemVariants}>
-                          <InputField
-                            label="Small Text"
-                            name="smallText"
-                            value={formData.smallText}
-                            onChange={handleInputChange}
-                            placeholder="e.g., Limited Time Offer"
-                          />
-                        </motion.div>
 
-                        <motion.div variants={itemVariants}>
-                          <InputField
-                            label="Offer Text"
-                            name="offerText"
-                            value={formData.offerText}
-                            onChange={handleInputChange}
-                            placeholder="e.g., 50% OFF"
-                          />
-                        </motion.div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <motion.div variants={itemVariants}>
-                          <SelectField
-                            label="Layout *"
-                            name="layout"
-                            value={formData.layout}
-                            onChange={handleInputChange}
-                            options={[
-                              { value: 'left', label: 'Left Aligned' },
-                              { value: 'right', label: 'Right Aligned' },
-                              { value: 'center', label: 'Center Aligned' }
-                            ]}
-                          />
-                        </motion.div>
 
                         <motion.div variants={itemVariants}>
                           <InputField
@@ -550,7 +502,7 @@ const AddSlider = () => {
                       <motion.div variants={itemVariants}>
                         <div className="flex items-center justify-between mb-2">
                           <label className={`block text-sm font-medium font-instrument ${currentTheme.text.secondary}`}>
-                            Main Image
+                            Mobile Image
                           </label>
                           <button
                             type="button"

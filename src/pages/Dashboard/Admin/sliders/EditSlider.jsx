@@ -27,12 +27,8 @@ const EditSlider = () => {
   const [formData, setFormData] = useState({
     title: '',
     subtitle: '',
-    description: '',
-    smallText: '',
-    offerText: '',
     buttonText: '',
     buttonLink: '',
-    layout: 'left',
     order: 0,
     isActive: true,
     startDate: '',
@@ -117,12 +113,8 @@ const EditSlider = () => {
       setFormData({
         title: slider.title || '',
         subtitle: slider.subtitle || '',
-        description: slider.description || '',
-        smallText: slider.smallText || '',
-        offerText: slider.offerText || '',
         buttonText: slider.buttonText || '',
         buttonLink: slider.buttonLink || '',
-        layout: slider.layout || 'left',
         order: slider.order || 0,
         isActive: slider.isActive ?? true,
         startDate: formatDateForInput(slider.startDate),
@@ -406,53 +398,10 @@ const EditSlider = () => {
                         />
                       </motion.div>
 
-                      <motion.div variants={itemVariants}>
-                        <TextArea
-                          label="Description"
-                          name="description"
-                          value={formData.description}
-                          onChange={handleInputChange}
-                          placeholder="Detailed description of the slider..."
-                          rows={3}
-                        />
-                      </motion.div>
+
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <motion.div variants={itemVariants}>
-                          <InputField
-                            label="Small Text"
-                            name="smallText"
-                            value={formData.smallText}
-                            onChange={handleInputChange}
-                            placeholder="e.g., Limited Time Offer"
-                          />
-                        </motion.div>
 
-                        <motion.div variants={itemVariants}>
-                          <InputField
-                            label="Offer Text"
-                            name="offerText"
-                            value={formData.offerText}
-                            onChange={handleInputChange}
-                            placeholder="e.g., 50% OFF"
-                          />
-                        </motion.div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <motion.div variants={itemVariants}>
-                          <SelectField
-                            label="Layout *"
-                            name="layout"
-                            value={formData.layout}
-                            onChange={handleInputChange}
-                            options={[
-                              { value: 'left', label: 'Left Aligned' },
-                              { value: 'right', label: 'Right Aligned' },
-                              { value: 'center', label: 'Center Aligned' }
-                            ]}
-                          />
-                        </motion.div>
 
                         <motion.div variants={itemVariants}>
                           <InputField

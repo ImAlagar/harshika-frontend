@@ -133,7 +133,7 @@ const AddProduct = () => {
   // Professional variant structure: color -> sizes + images
   const [variants, setVariants] = useState({});
 
-  const commonSizes = ['XS','S','M', 'L', 'XL', 'XXL', 'XXXL'];
+  const commonSizes = ['XS','S','M', 'L', 'XL', '2XL', '3XL','4XL','5XL', '6XL', '7XL', 'Free Size'];
   const commonColors = ['Red', 'Blue', 'Green', 'Black', 'White', 'Gray', 'Navy', 'Maroon', 'Olive'];
 
   // Theme-based styling
@@ -509,11 +509,6 @@ const AddProduct = () => {
         resetForm();
       }
 } catch (error) {
-  // DEBUG: Log the complete error structure
-  console.log('Full error:', error);
-  console.log('Error data keys:', Object.keys(error.data || {}));
-  console.log('Error data values:', error.data);
-  
   // Try to find the actual error message
   let errorMessage = 'Failed to create product';
   

@@ -51,16 +51,21 @@ const AdminUsers = () => {
   } = useSelector((state) => state.user);
 
   // Local state
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [deleteModal, setDeleteModal] = useState({
-    isOpen: false,
-    user: null
-  });
-  const [roleChangeModal, setRoleChangeModal] = useState({
-    isOpen: false,
-    user: null,
-    newRole: ''
-  });
+// Local state
+const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+const [deleteModal, setDeleteModal] = useState({
+  isOpen: false,
+  user: null
+});
+const [roleChangeModal, setRoleChangeModal] = useState({
+  isOpen: false,
+  user: null,
+  newRole: ''
+});
+
+const [statusLoading, setStatusLoading] = useState({}); // { userId: true/false }
+const [roleLoading, setRoleLoading] = useState({}); // { userId: true/false }
+const [approvalLoading, setApprovalLoading] = useState({}); // { userId: true/false }
 
   // RTK Query hooks with pagination and filters
   const {
@@ -169,39 +174,60 @@ const AdminUsers = () => {
     }
   };
 
-  const handleStatusToggle = async (userId, currentStatus) => {
-    try {
-      await toggleStatus({ 
-        userId, 
-        currentStatus 
-      }).unwrap();
-    } catch (error) {
-      console.error('Status toggle failed:', error);
-    }
-  };
+const handleStatusToggle = async (userId, currentStatus) => {
+  // Set loading for this specific user
+  setStatusLoading(prev => ({ ...prev, [userId]: true }));
+  
+  try {
+    await toggleStatus({ 
+      userId, 
+      currentStatus 
+    }).unwrap();
+  } catch (error) {
+    console.error('Status toggle failed:', error);
+  } finally {
+    // Clear loading for this specific user
+    setStatusLoading(prev => ({ ...prev, [userId]: false }));
+  }
+};
 
-  const handleRoleChange = async () => {
-    try {
-      await changeRole({ 
-        userId: roleChangeModal.user.id, 
-        role: roleChangeModal.newRole 
-      }).unwrap();
-      setRoleChangeModal({ isOpen: false, user: null, newRole: '' });
-    } catch (error) {
-      console.error('Role change failed:', error);
-    }
-  };
 
-  const handleWholesalerApproval = async (userId, currentApproval) => {
-    try {
-      await approveWholesaler({ 
-        userId, 
-        isApproved: !currentApproval 
-      }).unwrap();
-    } catch (error) {
-      console.error('Approval toggle failed:', error);
-    }
-  };
+const handleRoleChange = async () => {
+  const userId = roleChangeModal.user.id;
+  
+  // Set loading for this specific user
+  setRoleLoading(prev => ({ ...prev, [userId]: true }));
+  
+  try {
+    await changeRole({ 
+      userId, 
+      role: roleChangeModal.newRole 
+    }).unwrap();
+    setRoleChangeModal({ isOpen: false, user: null, newRole: '' });
+  } catch (error) {
+    console.error('Role change failed:', error);
+  } finally {
+    // Clear loading for this specific user
+    setRoleLoading(prev => ({ ...prev, [userId]: false }));
+  }
+};
+
+const handleWholesalerApproval = async (userId, currentApproval) => {
+  // Set loading for this specific user
+  setApprovalLoading(prev => ({ ...prev, [userId]: true }));
+  
+  try {
+    await approveWholesaler({ 
+      userId, 
+      isApproved: !currentApproval 
+    }).unwrap();
+  } catch (error) {
+    console.error('Approval toggle failed:', error);
+  } finally {
+    // Clear loading for this specific user
+    setApprovalLoading(prev => ({ ...prev, [userId]: false }));
+  }
+};
 
   const handleServerPageChange = (page) => {
     dispatch(setPagination({ 
@@ -292,11 +318,15 @@ const AdminUsers = () => {
       ),
       className: 'min-w-48'
     },
-    {
-      key: 'role',
-      title: 'Role',
-      dataIndex: 'role',
-      render: (value, record) => (
+  {
+    key: 'role',
+    title: 'Role',
+    dataIndex: 'role',
+    render: (value, record) => {
+      // Get loading state for this specific user
+      const isLoading = approvalLoading[record.id];
+      
+      return (
         <div className="flex flex-col space-y-1">
           <span className={getRoleBadgeStyle(value)}>
             {value === 'ADMIN' && <FiShield className="w-3 h-3 mr-1" />}
@@ -307,7 +337,7 @@ const AdminUsers = () => {
           {record.role === 'WHOLESALER' && (
             <button
               onClick={() => handleWholesalerApproval(record.id, record.isApproved)}
-              disabled={isApprovalLoading}
+              disabled={isLoading}
               className={`text-xs px-2 py-1 rounded ${
                 record.isApproved
                   ? theme === 'dark' 
@@ -316,44 +346,50 @@ const AdminUsers = () => {
                   : theme === 'dark'
                     ? 'bg-yellow-900 text-yellow-200 hover:bg-yellow-800'
                     : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-              } ${isApprovalLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              {isApprovalLoading ? '...' : record.isApproved ? 'Approved' : 'Pending'}
+              {isLoading ? '...' : record.isApproved ? 'Approved' : 'Pending'}
             </button>
           )}
         </div>
-      )
-    },
-    {
-      key: 'status',
-      title: 'Status',
-      dataIndex: 'isActive',
-      render: (isActive, record) => (
-        <button
-          onClick={() => handleStatusToggle(record.id, isActive)}
-          disabled={isStatusLoading}
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-            isActive
-              ? theme === 'dark' 
-                ? 'bg-green-900 text-green-200 hover:bg-green-800' 
-                : 'bg-green-100 text-green-800 hover:bg-green-200'
-              : theme === 'dark'
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-          } ${isStatusLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          data-action-button="true"
-        >
-          {isStatusLoading ? (
-            <FiRefreshCw className="w-3 h-3 mr-1 animate-spin" />
-          ) : isActive ? (
-            <FiUserCheck className="w-3 h-3 mr-1" />
-          ) : (
-            <FiUserX className="w-3 h-3 mr-1" />
-          )}
-          {isStatusLoading ? 'Updating...' : isActive ? 'Active' : 'Inactive'}
-        </button>
-      )
-    },
+      );
+    }
+  },
+{
+  key: 'status',
+  title: 'Status',
+  dataIndex: 'isActive',
+  render: (isActive, record) => {
+    // Get loading state for this specific user
+    const isLoading = statusLoading[record.id];
+    
+    return (
+      <button
+        onClick={() => handleStatusToggle(record.id, isActive)}
+        disabled={isLoading}
+        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+          isActive
+            ? theme === 'dark' 
+              ? 'bg-green-900 text-green-200 hover:bg-green-800' 
+              : 'bg-green-100 text-green-800 hover:bg-green-200'
+            : theme === 'dark'
+              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+        } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        data-action-button="true"
+      >
+        {isLoading ? (
+          <FiRefreshCw className="w-3 h-3 mr-1 animate-spin" />
+        ) : isActive ? (
+          <FiUserCheck className="w-3 h-3 mr-1" />
+        ) : (
+          <FiUserX className="w-3 h-3 mr-1" />
+        )}
+        {isLoading ? 'Updating...' : isActive ? 'Active' : 'Inactive'}
+      </button>
+    );
+  }
+},
     {
       key: 'createdAt',
       title: 'Joined',
@@ -364,63 +400,68 @@ const AdminUsers = () => {
         </span>
       )
     },
-    {
-      key: 'actions',
-      title: 'Actions',
-      dataIndex: 'id',
-      render: (value, record) => (
-        <div className="flex items-center space-x-2">
-          {/* View Button */}
-          <Link
-            to={`/dashboard/users/view/${value}`}
-            className={`p-2 rounded-lg transition-colors ${
-              theme === 'dark'
-                ? 'text-blue-400 hover:bg-blue-900'
-                : 'text-blue-600 hover:bg-blue-50'
-            }`}
-            title="View Details"
-            data-action-button="true"
-          >
-            <FiEye className="w-4 h-4" />
-          </Link>
-          
-          {/* Role Change Buttons */}
-          {record.role !== 'ADMIN' && (
-            <>
-              <button
-                onClick={() => openRoleChangeModal(record, 'ADMIN')}
-                className={`p-2 rounded-lg transition-colors ${
-                  theme === 'dark'
-                    ? 'text-red-400 hover:bg-red-900'
-                    : 'text-red-600 hover:bg-red-50'
-                }`}
-                title="Make Admin"
-                disabled={isRoleLoading}
-                data-action-button="true"
-              >
-                <FiShield className="w-4 h-4" />
-              </button>
+{
+  key: 'actions',
+  title: 'Actions',
+  dataIndex: 'id',
+  render: (value, record) => {
+    // Get loading state for role change for this specific user
+    const isRoleChanging = roleLoading[record.id];
+    
+    return (
+      <div className="flex items-center space-x-2">
+        {/* View Button */}
+        <Link
+          to={`/dashboard/users/view/${value}`}
+          className={`p-2 rounded-lg transition-colors ${
+            theme === 'dark'
+              ? 'text-blue-400 hover:bg-blue-900'
+              : 'text-blue-600 hover:bg-blue-50'
+          }`}
+          title="View Details"
+          data-action-button="true"
+        >
+          <FiEye className="w-4 h-4" />
+        </Link>
+        
+        {/* Role Change Buttons */}
+        {record.role !== 'ADMIN' && (
+          <>
+            <button
+              onClick={() => openRoleChangeModal(record, 'ADMIN')}
+              className={`p-2 rounded-lg transition-colors ${
+                theme === 'dark'
+                  ? 'text-red-400 hover:bg-red-900'
+                  : 'text-red-600 hover:bg-red-50'
+              }`}
+              title="Make Admin"
+              disabled={isRoleChanging}
+              data-action-button="true"
+            >
+              <FiShield className="w-4 h-4" />
+            </button>
 
-            </>
-          )}
-          
-          {/* Delete Button */}
-          <button
-            onClick={() => openDeleteModal(record)}
-            className={`p-2 rounded-lg transition-colors ${
-              theme === 'dark'
-                ? 'text-red-400 hover:bg-red-900'
-                : 'text-red-600 hover:bg-red-50'
-            }`}
-            title="Delete User"
-            disabled={isDeleting}
-            data-action-button="true"
-          >
-            <FiTrash2 className="w-4 h-4" />
-          </button>
-        </div>
-      )
-    }
+          </>
+        )}
+        
+        {/* Delete Button */}
+        <button
+          onClick={() => openDeleteModal(record)}
+          className={`p-2 rounded-lg transition-colors ${
+            theme === 'dark'
+              ? 'text-red-400 hover:bg-red-900'
+              : 'text-red-600 hover:bg-red-50'
+          }`}
+          title="Delete User"
+          disabled={isDeleting}
+          data-action-button="true"
+        >
+          <FiTrash2 className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+}
   ];
 
   // Mobile card renderer (keep your existing renderUserCard function)
@@ -475,31 +516,31 @@ const AdminUsers = () => {
 
               <div className="flex flex-col items-end space-y-2">
                 {/* Status toggle */}
-                <button
-                  onClick={() => handleStatusToggle(user.id, user.isActive)}
-                  disabled={isStatusLoading}
-                  className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${
-                    user.isActive
-                      ? theme === 'dark' 
-                        ? 'bg-green-900 text-green-200' 
-                        : 'bg-green-100 text-green-800'
-                      : theme === 'dark'
-                        ? 'bg-gray-700 text-gray-300'
-                        : 'bg-gray-100 text-gray-800'
-                  } ${isStatusLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-                  data-action-button="true"
-                >
-                  {isStatusLoading && (
-                    <FiRefreshCw className="w-3 h-3 animate-spin" />
-                  )}
-                  <span>
-                    {isStatusLoading
-                      ? "Updating..."
-                      : user.isActive
-                      ? "Active"
-                      : "Inactive"}
-                  </span>
-                </button>
+              <button
+                onClick={() => handleStatusToggle(user.id, user.isActive)}
+                disabled={statusLoading[user.id]}
+                className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${
+                  user.isActive
+                    ? theme === 'dark' 
+                      ? 'bg-green-900 text-green-200' 
+                      : 'bg-green-100 text-green-800'
+                    : theme === 'dark'
+                      ? 'bg-gray-700 text-gray-300'
+                      : 'bg-gray-100 text-gray-800'
+                } ${statusLoading[user.id] ? "opacity-50 cursor-not-allowed" : ""}`}
+                data-action-button="true"
+              >
+                {statusLoading[user.id] && (
+                  <FiRefreshCw className="w-3 h-3 animate-spin" />
+                )}
+                <span>
+                  {statusLoading[user.id]
+                    ? "Updating..."
+                    : user.isActive
+                    ? "Active"
+                    : "Inactive"}
+                </span>
+              </button>
 
                 {/* Role badge */}
                 <span className={getRoleBadgeStyle(user.role)}>
@@ -535,31 +576,31 @@ const AdminUsers = () => {
                 {/* Role Change Buttons */}
                 {user.role !== 'ADMIN' && (
                   <>
-                    <button
-                      onClick={() => openRoleChangeModal(user, 'ADMIN')}
-                      className={`p-1 rounded transition-colors ${
-                        theme === 'dark' 
-                          ? 'text-red-400 hover:bg-red-900' 
-                          : 'text-red-600 hover:bg-red-50'
-                      }`}
-                      disabled={isRoleLoading}
-                      data-action-button="true"
-                    >
-                      <FiShield className="w-4 h-4" />
-                    </button>
-                    
-                    <button
-                      onClick={() => openRoleChangeModal(user, 'WHOLESALER')}
-                      className={`p-1 rounded transition-colors ${
-                        theme === 'dark' 
-                          ? 'text-purple-400 hover:bg-purple-900' 
-                          : 'text-purple-600 hover:bg-purple-50'
-                      }`}
-                      disabled={isRoleLoading}
-                      data-action-button="true"
-                    >
-                      <FiShoppingBag className="w-4 h-4" />
-                    </button>
+<button
+  onClick={() => openRoleChangeModal(user, 'ADMIN')}
+  className={`p-1 rounded transition-colors ${
+    theme === 'dark' 
+      ? 'text-red-400 hover:bg-red-900' 
+      : 'text-red-600 hover:bg-red-50'
+  }`}
+  disabled={roleLoading[user.id]}
+  data-action-button="true"
+>
+  <FiShield className="w-4 h-4" />
+</button>
+
+<button
+  onClick={() => openRoleChangeModal(user, 'WHOLESALER')}
+  className={`p-1 rounded transition-colors ${
+    theme === 'dark' 
+      ? 'text-purple-400 hover:bg-purple-900' 
+      : 'text-purple-600 hover:bg-purple-50'
+  }`}
+  disabled={roleLoading[user.id]}
+  data-action-button="true"
+>
+  <FiShoppingBag className="w-4 h-4" />
+</button>
                   </>
                 )}
                 

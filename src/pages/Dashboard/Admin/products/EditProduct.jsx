@@ -174,7 +174,7 @@ const product = productData?.data;
   // Enhanced variant structure with variant IDs
   const [variants, setVariants] = useState({});
 
-  const commonSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+  const commonSizes = ['XS','S','M', 'L', 'XL', '2XL', '3XL','4XL','5XL', '6XL', '7XL', 'Free Size'];
   const commonColors = ['Red', 'Blue', 'Green', 'Black', 'White', 'Gray', 'Navy', 'Maroon', 'Olive'];
 
   // Theme-based styling
@@ -216,6 +216,9 @@ const product = productData?.data;
   };
 
   const currentTheme = themeClasses[theme] || themeClasses.light;
+
+
+
 
   useEffect(() => {
     return () => {
@@ -401,17 +404,25 @@ const handleProductChange = (e) => {
   };
 
   // Update size stock for a color
-  const updateSizeStock = (color, sizeIndex, stock) => {
-    setVariants(prev => ({
-      ...prev,
-      [color]: {
-        ...prev[color],
-        sizes: prev[color].sizes.map((size, index) =>
-          index === sizeIndex ? { ...size, stock: parseInt(stock) || 0 } : size
-        )
-      }
-    }));
-  };
+const updateSizeStock = (color, sizeIndex, stock) => {
+
+
+  const stockValue = parseInt(stock) || 0;
+  
+  setVariants(prev => ({
+    ...prev,
+    [color]: {
+      ...prev[color],
+      sizes: prev[color].sizes.map((size, index) =>
+        index === sizeIndex ? { 
+          ...size, 
+          stock: stockValue,
+          lastUpdated: new Date().toISOString() // Track when updated
+        } : size
+      )
+    }
+  }));
+};
 
   // Handle color image upload
   const handleColorImages = (color, files) => {
@@ -491,7 +502,7 @@ const handleProductChange = (e) => {
     
     // If it's an existing variant, delete from backend
     if (variant.variantId) {
-      setVariantLoading(prev => ({ ...prev, [color]: true }));
+       setVariantLoading(prev => ({ ...prev, [`${color}-delete`]: true }));
       try {
         await deleteProductVariant({
           productId,
@@ -569,7 +580,7 @@ const handleProductChange = (e) => {
 
   // Save individual variant
   const saveVariant = async (color) => {
-    setVariantLoading(prev => ({ ...prev, [color]: true }));
+    setVariantLoading(prev => ({ ...prev, [`${color}-save`]: true }));
 
     try {
       const variantData = variants[color];
@@ -617,7 +628,7 @@ const handleProductChange = (e) => {
       console.error(`Save variant ${color} error:`, error);
       toast.error(`Failed to save variant ${color}: ${error?.data?.message || 'Unknown error'}`);
     } finally {
-      setVariantLoading(prev => ({ ...prev, [color]: false }));
+      setVariantLoading(prev => ({ ...prev, [`${color}-save`]: false }));
     }
   };
 
@@ -626,26 +637,39 @@ const handleProductChange = (e) => {
     const variant = variants[color];
     const size = variant.sizes[sizeIndex];
     
-    if (!variant.variantId) {
-      toast.error('Please save the variant first before updating stock');
+
+    // Use size.variantId instead of variant.variantId!
+    if (!size.variantId) {
+      toast.error('This size variant is not saved yet. Please save the variant first.');
       return;
     }
 
     setVariantLoading(prev => ({ ...prev, [`${color}-${size.size}`]: true }));
 
     try {
-      await updateVariantStock({
+      // Send both size and stock
+      const stockData = {
+        size: size.size,  // This might be optional now
+        stock: size.stock
+      };
+      
+
+      
+      // Use size.variantId here!
+      const response = await updateVariantStock({
         productId,
-        variantId: variant.variantId,
-        stockData: {
-          size: size.size,
-          stock: size.stock
-        }
+        variantId: size.variantId,  // Changed from variant.variantId to size.variantId
+        stockData: stockData
       }).unwrap();
 
+      
       toast.success(`Stock updated for ${color} - ${size.size}`);
+      
+      // Refetch product to get updated data
+      await refetchProduct();
+      
     } catch (error) {
-      console.error('Update stock error:', error);
+      console.error('📱 FRONTEND - Error:', error);
       toast.error(`Failed to update stock: ${error?.data?.message || 'Unknown error'}`);
     } finally {
       setVariantLoading(prev => ({ ...prev, [`${color}-${size.size}`]: false }));
@@ -1182,66 +1206,36 @@ const handleProductChange = (e) => {
                               </div>
 
                               {/* Buttons */}
-                              <div className="flex gap-2">
-                                <Button 
-                                  type="button" 
-                                  onClick={() => saveVariant(color)}
-                                  variant="primary"
-                                  loading={variantLoading[color]}
-                                  disabled={variantLoading[color]}
-                                  className="flex items-center justify-center gap-1 text-xs sm:text-sm"
-                                >
-                                  <Save size={14} />
-                                  <span className="hidden sm:inline">
-                                    {data.variantId ? 'Update' : 'Save'} Variant
-                                  </span>
-                                </Button>
-
-                                <Button 
-                                  type="button" 
-                                  onClick={() => removeColorVariant(color)}
-                                  variant="danger"
-                                  loading={variantLoading[color]}
-                                  disabled={variantLoading[color]}
-                                  className="flex items-center justify-center gap-1 text-xs sm:text-sm"
-                                >
-                                  <Trash2 size={14} />
-                                  <span className="hidden sm:inline">Remove</span>
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button 
+                                    type="button" 
+                                    onClick={() => saveVariant(color)}
+                                    variant="primary"
+                                    loading={variantLoading[`${color}-save`]} // Specific loading state
+                                    disabled={variantLoading[`${color}-save`] || variantLoading[`${color}-delete`]}
+                                    className="flex items-center justify-center gap-1 text-xs sm:text-sm"
+                                  >
+                                    <Save size={14} />
+                                    <span className="hidden sm:inline">
+                                      {data.variantId ? 'Update' : 'Save'} Variant
+                                    </span>
+                                  </Button>
+                              <Button 
+                                type="button" 
+                                onClick={() => removeColorVariant(color)}
+                                variant="danger"
+                                loading={variantLoading[`${color}-delete`]} // Specific loading state
+                                disabled={variantLoading[`${color}-save`] || variantLoading[`${color}-delete`]}
+                                className="flex items-center justify-center gap-1 text-xs sm:text-sm"
+                              >
+                                <Trash2 size={14} />
+                                <span className="hidden sm:inline">Remove</span>
+                              </Button>
                               </div>
                             </div>
 
                             {/* Sizes */}
                             <div className="mb-6">
-                              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 gap-2">
-                                <h4 className="text-sm sm:text-md font-medium font-instrument">Sizes & Stock</h4>
-                                <div className="flex flex-col sm:flex-row gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Custom size (e.g., 28, 30)"
-                                    onKeyPress={(e) => {
-                                      if (e.key === "Enter") {
-                                        addCustomSize(color, e.target.value);
-                                        e.target.value = "";
-                                      }
-                                    }}
-                                    className={`px-3 py-1 border ${currentTheme.border} rounded text-sm ${currentTheme.bg.input} ${currentTheme.text.primary}`}
-                                  />
-                                  <Button
-                                    type="button"
-                                    onClick={() => {
-                                      const input = document.querySelector(`input[placeholder="Custom size (e.g., 28, 30)"]`);
-                                      addCustomSize(color, input?.value);
-                                      if (input) input.value = "";
-                                    }}
-                                    variant="primary"
-                                    className="text-xs sm:text-sm px-3 py-1"
-                                  >
-                                    Add Size
-                                  </Button>
-                                </div>
-                              </div>
-
                               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
                                 {data.sizes.map((size, index) => (
                                   <motion.div

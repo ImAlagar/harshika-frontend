@@ -38,6 +38,8 @@ const AdminSubCategories = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
 
+    const [statusLoading, setStatusLoading] = useState({}); // { subcategoryId: boolean }
+
   // Redux state
   const { 
     pagination,
@@ -121,7 +123,10 @@ const AdminSubCategories = () => {
     }
   };
 
-  const handleStatusToggle = async (subcategoryId, currentStatus) => {
+ const handleStatusToggle = async (subcategoryId, currentStatus) => {
+    // Set loading for this specific subcategory
+    setStatusLoading(prev => ({ ...prev, [subcategoryId]: true }));
+    
     try {
       await toggleStatus({ 
         subcategoryId, 
@@ -129,8 +134,12 @@ const AdminSubCategories = () => {
       }).unwrap();
     } catch (error) {
       console.error('Status toggle failed:', error);
+    } finally {
+      // Clear loading for this specific subcategory
+      setStatusLoading(prev => ({ ...prev, [subcategoryId]: false }));
     }
   };
+
 
   const handleServerPageChange = (page) => {
     dispatch(setPagination({ 
@@ -231,35 +240,39 @@ const AdminSubCategories = () => {
         </span>
       )
     },
-    {
+  {
       key: 'status',
       title: 'Status',
       dataIndex: 'isActive',
-      render: (isActive, record) => (
-        <button
-          onClick={() => handleStatusToggle(record.id, isActive)}
-          disabled={isStatusLoading}
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-            isActive
-              ? theme === 'dark' 
-                ? 'bg-green-900 text-green-200 hover:bg-green-800' 
-                : 'bg-green-100 text-green-800 hover:bg-green-200'
-              : theme === 'dark'
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-          } ${isStatusLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          data-action-button="true"
-        >
-          {isStatusLoading ? (
-            <FiRefreshCw className="w-3 h-3 mr-1 animate-spin" />
-          ) : isActive ? (
-            <FiToggleRight className="w-3 h-3 mr-1" />
-          ) : (
-            <FiToggleLeft className="w-3 h-3 mr-1" />
-          )}
-          {isStatusLoading ? 'Updating...' : isActive ? 'Active' : 'Inactive'}
-        </button>
-      )
+      render: (isActive, record) => {
+        const isLoading = statusLoading[record.id]; // Check loading for this specific subcategory
+        
+        return (
+          <button
+            onClick={() => handleStatusToggle(record.id, isActive)}
+            disabled={isLoading}
+            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              isActive
+                ? theme === 'dark' 
+                  ? 'bg-green-900 text-green-200 hover:bg-green-800' 
+                  : 'bg-green-100 text-green-800 hover:bg-green-200'
+                : theme === 'dark'
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            data-action-button="true"
+          >
+            {isLoading ? (
+              <FiRefreshCw className="w-3 h-3 mr-1 animate-spin" />
+            ) : isActive ? (
+              <FiToggleRight className="w-3 h-3 mr-1" />
+            ) : (
+              <FiToggleLeft className="w-3 h-3 mr-1" />
+            )}
+            {isLoading ? 'Updating...' : isActive ? 'Active' : 'Inactive'}
+          </button>
+        );
+      }
     },
     {
       key: 'createdAt',
@@ -326,6 +339,8 @@ const AdminSubCategories = () => {
 
   // Mobile card renderer
   const renderSubcategoryCard = (subcategory) => {
+      const isLoading = statusLoading[subcategory.id];
+
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -377,30 +392,30 @@ const AdminSubCategories = () => {
 
               {/* Status toggle */}
               <button
-                onClick={() => handleStatusToggle(subcategory.id, subcategory.isActive)}
-                disabled={isStatusLoading}
-                className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${
-                  subcategory.isActive
-                    ? theme === 'dark' 
-                      ? 'bg-green-900 text-green-200' 
-                      : 'bg-green-100 text-green-800'
-                    : theme === 'dark'
-                      ? 'bg-gray-700 text-gray-300'
-                      : 'bg-gray-100 text-gray-800'
-                } ${isStatusLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-                data-action-button="true"
-              >
-                {isStatusLoading && (
-                  <FiRefreshCw className="w-3 h-3 animate-spin" />
-                )}
-                <span>
-                  {isStatusLoading
-                    ? "Updating..."
-                    : subcategory.isActive
-                    ? "Active"
-                    : "Inactive"}
-                </span>
-              </button>
+                    onClick={() => handleStatusToggle(subcategory.id, subcategory.isActive)}
+                    disabled={isLoading}
+                    className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 ${
+                      subcategory.isActive
+                        ? theme === 'dark' 
+                          ? 'bg-green-900 text-green-200' 
+                          : 'bg-green-100 text-green-800'
+                        : theme === 'dark'
+                          ? 'bg-gray-700 text-gray-300'
+                          : 'bg-gray-100 text-gray-800'
+                    } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+                    data-action-button="true"
+                  >
+                    {isLoading && (
+                      <FiRefreshCw className="w-3 h-3 animate-spin" />
+                    )}
+                    <span>
+                      {isLoading
+                        ? "Updating..."
+                        : subcategory.isActive
+                        ? "Active"
+                        : "Inactive"}
+                    </span>
+                  </button>
             </div>
 
             {/* Bottom section */}

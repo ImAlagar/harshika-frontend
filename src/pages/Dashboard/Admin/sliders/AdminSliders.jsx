@@ -269,19 +269,7 @@ const AdminSliders = () => {
       ),
       className: 'min-w-48'
     },
-    {
-      key: 'layout',
-      title: 'Layout',
-      dataIndex: 'layout',
-      render: (value) => (
-        <div className="flex items-center space-x-2">
-          <FiLayout className="w-4 h-4 text-blue-500" />
-          <span className={`font-medium ${themeStyles.text.primary}`}>
-            {formatLayout(value)}
-          </span>
-        </div>
-      )
-    },
+
     {
       key: 'status',
       title: 'Status',
@@ -534,15 +522,7 @@ const AdminSliders = () => {
 
             {/* Slider Info */}
             <div className="grid grid-cols-2 gap-4 mb-3">
-                <div>
-                <p className={`text-sm ${themeStyles.text.muted}`}>Layout</p>
-                <p
-                    className={`font-semibold ${themeStyles.text.primary} flex items-center`}
-                >
-                    <FiLayout className="w-3 h-3 mr-1 text-blue-500" />
-                    {formatLayout(slider.layout)}
-                </p>
-                </div>
+  
                 <div>
                 <p className={`text-sm ${themeStyles.text.muted}`}>Order</p>
                 <p className={`font-semibold ${themeStyles.text.primary}`}>

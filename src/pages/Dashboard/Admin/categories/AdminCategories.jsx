@@ -46,12 +46,15 @@ const AdminCategories = () => {
   } = useSelector((state) => state.category);
 
   // Local state
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [deleteModal, setDeleteModal] = useState({
-    isOpen: false,
-    category: null
-  });
+const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+const [deleteModal, setDeleteModal] = useState({
+  isOpen: false,
+  category: null
+});
 
+const [statusLoading, setStatusLoading] = useState({}); // { categoryId: true/false }
+
+  
   // RTK Query hooks with pagination and filters
   const {
     data: categoriesResponse,
@@ -124,16 +127,23 @@ const AdminCategories = () => {
     }
   };
 
-  const handleStatusToggle = async (categoryId, currentStatus) => {
-    try {
-      await toggleStatus({ 
-        categoryId, 
-        currentStatus 
-      }).unwrap();
-    } catch (error) {
-      console.error('Status toggle failed:', error);
-    }
-  };
+const handleStatusToggle = async (categoryId, currentStatus) => {
+  // Set loading for this specific category
+  setStatusLoading(prev => ({ ...prev, [categoryId]: true }));
+  
+  try {
+    await toggleStatus({ 
+      categoryId, 
+      currentStatus 
+    }).unwrap();
+  } catch (error) {
+    console.error('Status toggle failed:', error);
+  } finally {
+    // Clear loading for this specific category
+    setStatusLoading(prev => ({ ...prev, [categoryId]: false }));
+  }
+};
+
 
   const handleServerPageChange = (page) => {
     dispatch(setPagination({ 
@@ -217,36 +227,41 @@ const AdminCategories = () => {
         </span>
       )
     },
-    {
-      key: 'status',
-      title: 'Status',
-      dataIndex: 'isActive',
-      render: (isActive, record) => (
-        <button
-          onClick={() => handleStatusToggle(record.id, isActive)}
-          disabled={isStatusLoading}
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-            isActive
-              ? theme === 'dark' 
-                ? 'bg-green-900 text-green-200 hover:bg-green-800' 
-                : 'bg-green-100 text-green-800 hover:bg-green-200'
-              : theme === 'dark'
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-          } ${isStatusLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          data-action-button="true"
-        >
-          {isStatusLoading ? (
-            <FiRefreshCw className="w-3 h-3 mr-1 animate-spin" />
-          ) : isActive ? (
-            <FiToggleRight className="w-3 h-3 mr-1" />
-          ) : (
-            <FiToggleLeft className="w-3 h-3 mr-1" />
-          )}
-          {isStatusLoading ? 'Updating...' : isActive ? 'Active' : 'Inactive'}
-        </button>
-      )
-    },
+{
+  key: 'status',
+  title: 'Status',
+  dataIndex: 'isActive',
+  render: (isActive, record) => {
+    // Get loading state for this specific category
+    const isLoading = statusLoading[record.id];
+    
+    return (
+      <button
+        onClick={() => handleStatusToggle(record.id, isActive)}
+        disabled={isLoading}
+        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+          isActive
+            ? theme === 'dark' 
+              ? 'bg-green-900 text-green-200 hover:bg-green-800' 
+              : 'bg-green-100 text-green-800 hover:bg-green-200'
+            : theme === 'dark'
+              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+        } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+        data-action-button="true"
+      >
+        {isLoading ? (
+          <FiRefreshCw className="w-3 h-3 mr-1 animate-spin" />
+        ) : isActive ? (
+          <FiToggleRight className="w-3 h-3 mr-1" />
+        ) : (
+          <FiToggleLeft className="w-3 h-3 mr-1" />
+        )}
+        {isLoading ? 'Updating...' : isActive ? 'Active' : 'Inactive'}
+      </button>
+    );
+  }
+},
     {
       key: 'createdAt',
       title: 'Created',
@@ -354,29 +369,29 @@ const AdminCategories = () => {
               </div>
 
               {/* Status toggle */}
-              <button
-                onClick={() => handleStatusToggle(category.id, category.isActive)}
-                disabled={isStatusLoading}
-                className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 mt-2 sm:mt-0 whitespace-nowrap ${
-                  category.isActive
-                    ? theme === 'dark' 
-                      ? 'bg-green-900 text-green-200' 
-                      : 'bg-green-100 text-green-800'
-                    : theme === 'dark'
-                      ? 'bg-gray-700 text-gray-300'
-                      : 'bg-gray-100 text-gray-800'
-                } ${isStatusLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-                data-action-button="true"
-              >
-                {isStatusLoading && <FiRefreshCw className="w-3 h-3 animate-spin" />}
-                <span>
-                  {isStatusLoading
-                    ? "Updating..."
-                    : category.isActive
-                    ? "Active"
-                    : "Inactive"}
-                </span>
-              </button>
+          <button
+            onClick={() => handleStatusToggle(category.id, category.isActive)}
+            disabled={statusLoading[category.id]} // Use per-category loading
+            className={`px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-1 mt-2 sm:mt-0 whitespace-nowrap ${
+              category.isActive
+                ? theme === 'dark' 
+                  ? 'bg-green-900 text-green-200' 
+                  : 'bg-green-100 text-green-800'
+                : theme === 'dark'
+                  ? 'bg-gray-700 text-gray-300'
+                  : 'bg-gray-100 text-gray-800'
+            } ${statusLoading[category.id] ? "opacity-50 cursor-not-allowed" : ""}`} // Use per-category loading
+            data-action-button="true"
+          >
+            {statusLoading[category.id] && <FiRefreshCw className="w-3 h-3 animate-spin" />} {/* Use per-category loading */}
+            <span>
+              {statusLoading[category.id] // Use per-category loading
+                ? "Updating..."
+                : category.isActive
+                ? "Active"
+                : "Inactive"}
+            </span>
+          </button>
             </div>
 
             {/* Bottom section: Count + Action buttons */}
