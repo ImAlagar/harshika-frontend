@@ -96,13 +96,12 @@ const AdminProducts = () => {
 
   const navigate = useNavigate();
 
-    const serverPagination = productsResponse?.data?.pagination || {};
-const serverTotalPages = serverPagination.pages || 1;
+  const serverPagination = productsResponse?.data?.pagination || {};
+  const serverTotalPages = serverPagination.pages || 1;
   // Extract all products from response
   const allProducts = productsResponse?.data?.products || [];
-const totalProducts = serverPagination.total || 0;
+  const totalProducts = serverPagination.total || 0;
   const stats = statsResponse?.data || {};
-
 
 
     // Helper function to get total stock from variants

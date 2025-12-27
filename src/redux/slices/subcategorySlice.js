@@ -11,7 +11,7 @@ const initialState = {
     currentPage: 1,
     pageSize: 10,
     totalItems: 0,
-    totalPages: 1
+    totalPages: 0
   },
   filters: {
     status: 'ALL', // ALL, ACTIVE, INACTIVE

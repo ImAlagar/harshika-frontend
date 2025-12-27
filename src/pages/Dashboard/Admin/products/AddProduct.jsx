@@ -209,9 +209,7 @@ const AddProduct = () => {
       // Warn if subcategory belongs to different category
       if (product.subcategoryId && value) {
         const selectedSubcategory = subcategories.find(sub => sub.id === product.subcategoryId);
-        if (selectedSubcategory && selectedSubcategory.categoryId !== value) {
-          toast.warning(`Selected subcategory "${selectedSubcategory.name}" belongs to a different category. You may want to update it.`);
-        }
+
       }
     }
 
@@ -716,7 +714,8 @@ const AddProduct = () => {
                         name="subcategoryId"
                         value={product.subcategoryId}
                         onChange={handleProductChange}
-                        className={`w-full px-4 py-3 border ${currentTheme.border} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${currentTheme.bg.input} ${currentTheme.text.primary} cursor-pointer`}
+                        
+                        className={`w-full  px-4 py-3 border ${currentTheme.border} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${currentTheme.bg.input} ${currentTheme.text.primary} cursor-pointer`}
                       >
                         <option value="">Select Subcategory (Optional)</option>
                         {subcategoriesLoading ? (
@@ -725,10 +724,7 @@ const AddProduct = () => {
                           // Filter subcategories by selected category if category is selected
                           subcategories
                             .filter(subcategory => {
-                              // If category is selected, show only subcategories from that category
-                              if (product.categoryId) {
-                                return subcategory.categoryId === product.categoryId;
-                              }
+    
                               // If no category selected, show ALL subcategories
                               return true;
                             })
@@ -741,11 +737,6 @@ const AddProduct = () => {
                             ))
                         )}
                       </select>
-                      {product.categoryId && (
-                        <p className={`text-xs ${currentTheme.text.muted} mt-1`}>
-                          Showing subcategories for selected category
-                        </p>
-                      )}
                     </motion.div>
 
                       {/* Normal Price */}

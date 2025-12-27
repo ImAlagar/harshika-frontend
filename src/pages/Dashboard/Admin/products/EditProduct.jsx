@@ -13,7 +13,7 @@ import {
   useDeleteProductVariantMutation,
   useUpdateVariantStockMutation
 } from '../../../../redux/services/productService';
-import { useGetSubcategoriesByCategoryQuery } from '../../../../redux/services/subcategoryService';
+import { useGetAllSubcategoriesQuery, useGetSubcategoriesByCategoryQuery } from '../../../../redux/services/subcategoryService';
 import { useGetAllCategoriesQuery } from '../../../../redux/services/categoryService';
 import InputField from '../../../../components/Common/InputField';
 import SelectField from '../../../../components/Common/SelectField';
@@ -42,7 +42,7 @@ const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
   const { data: categoriesData, isLoading: categoriesLoading } = useGetAllCategoriesQuery();
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const { data: subcategoriesData, isLoading: subcategoriesLoading } = 
-    useGetSubcategoriesByCategoryQuery(selectedCategoryId, { skip: !selectedCategoryId });
+    useGetAllSubcategoriesQuery();
 
 
 

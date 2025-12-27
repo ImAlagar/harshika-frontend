@@ -60,7 +60,7 @@ export const subcategoryService = apiSlice.injectEndpoints({
     // UPDATED: Get all subcategories with pagination
     getAllSubcategories: builder.query({
       query: (params = {}) => {
-        const { page = 1, limit = 10, category, status } = params;
+        const { page = 1, limit = 1000, category, status } = params;
         const queryParams = new URLSearchParams();
         
         queryParams.append('page', page);

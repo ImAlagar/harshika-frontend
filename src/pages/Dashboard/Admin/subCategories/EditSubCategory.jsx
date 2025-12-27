@@ -8,7 +8,6 @@ import { toast } from 'react-toastify';
 import { ArrowLeft, Upload, X, View } from 'lucide-react';
 import Button from '../../../../components/Common/Button';
 import InputField from '../../../../components/Common/InputField';
-import TextArea from '../../../../components/Common/TextArea';
 
 const EditSubCategory = () => {
   const { subcategoryId } = useParams();
@@ -328,11 +327,6 @@ const [formData, setFormData] = useState({
                           placeholder="e.g., T-Shirts, Dresses, etc."
                         />
                       </motion.div>
-
-
-
-
-
                       <motion.div variants={itemVariants} className="flex items-center">
                         <input
                           type="checkbox"
